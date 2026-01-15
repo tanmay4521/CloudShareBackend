@@ -4,6 +4,7 @@ import com.tndev.cloudshareapi.security.ClerkJwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -14,7 +15,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 import java.util.List;
 
@@ -31,8 +31,18 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/webhooks/**", "/files/public/**", "/files/download/**").permitAll()
-                        .anyRequest().authenticated())
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // public endpoints
+                        .requestMatchers(
+                                "/webhooks/**",
+                                "/files/public/**",
+                                "/files/download/**"
+                        ).permitAll()
+
+                        // everything else
+                        .anyRequest().authenticated()
+                )
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(clerkJwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -40,26 +50,27 @@ public class SecurityConfig {
     }
 
     @Bean
-    public org.springframework.security.core.userdetails.UserDetailsService userDetailsService() {
-        return username -> null;
-    }
-
-
-    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("*"));
-        config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+
+        config.setAllowedOrigins(List.of(
+                "https://cloudsharenextgen.netlify.app"
+        ));
+
+        config.setAllowedMethods(List.of(
+                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+        ));
+
+        config.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type"
+        ));
+
         config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-        return source;
-    }
 
-    @Bean
-    public CorsFilter corsFilter(CorsConfigurationSource corsConfigurationSource) {
-        return new CorsFilter(corsConfigurationSource);
+        return source;
     }
 }

@@ -99,7 +99,7 @@ public class ClerkJwtAuthFilter extends OncePerRequestFilter {
     }
 
     private void sendError(HttpServletResponse response, int code, String message) throws IOException {
-        if (!response.isCommitted()) {   // 🔥 Prevent double-write error
+        if (!response.isCommitted()) {
             response.sendError(code, message);
         }
     }
