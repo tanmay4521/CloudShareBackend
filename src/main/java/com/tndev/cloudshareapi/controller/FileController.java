@@ -44,9 +44,22 @@ public class FileController {
     }
 
     @GetMapping("/public/{id}")
-    public ResponseEntity<?> getPublicFile(@PathVariable String id){
+    public ResponseEntity<?> getPublicFile(@PathVariable String id)throws IOException{
         FileMetadataDTO file = fileMetadataService.getPublicFile(id);
-        return ResponseEntity.ok(file);
+        Path path = Paths.get(file.getFileLocation());
+        Resource resource = new UrlResource(path.toUri());
+
+        if (!resource.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(file.getType()))
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + file.getName() + "\""
+                )
+                .body(resource);
     }
     @GetMapping("/download/{id}")
     public ResponseEntity<Resource> download(@PathVariable String id) throws IOException {
