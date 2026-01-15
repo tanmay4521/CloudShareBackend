@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -45,22 +44,9 @@ public class FileController {
     }
 
     @GetMapping("/public/{id}")
-    public ResponseEntity<?> getPublicFile(@PathVariable String id) throws IOException {
+    public ResponseEntity<?> getPublicFile(@PathVariable String id){
         FileMetadataDTO file = fileMetadataService.getPublicFile(id);
-        Path path = Paths.get(file.getFileLocation());
-        Resource resource = new UrlResource(path.toUri());
-
-        if (!resource.exists()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(file.getType()))
-                .header(
-                        HttpHeaders.CONTENT_DISPOSITION,
-                        "inline; filename=\"" + file.getName() + "\""
-                )
-                .body(resource);
+        return ResponseEntity.ok(file);
     }
     @GetMapping("/download/{id}")
     public ResponseEntity<Resource> download(@PathVariable String id) throws IOException {
